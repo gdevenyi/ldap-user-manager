@@ -784,7 +784,7 @@ function ldap_complete_attribute_array($default_attributes,$additional_attribute
 
 function ldap_new_account($ldap_connection,$account_r) {
 
-  global $log_prefix, $LDAP, $LDAP_DEBUG, $DEFAULT_USER_SHELL, $DEFAULT_USER_GROUP;
+  global $log_prefix, $LDAP, $LDAP_DEBUG, $DEFAULT_USER_SHELL, $DEFAULT_USER_GROUP, $SET_SAMBA_ATTRIBUTES;
 
   if (    isset($account_r['givenname'][0])
       and isset($account_r['sn'][0])
@@ -793,78 +793,94 @@ function ldap_new_account($ldap_connection,$account_r) {
       and isset($account_r[$LDAP['account_attribute']])
       and isset($account_r['password'][0])) {
 
-   $account_identifier = $account_r[$LDAP['account_attribute']][0];
-   $user_dn=$LDAP['user_dn'];
-   $ldap_search_query = "(${LDAP['account_attribute']}=" . ldap_escape($account_identifier, "", LDAP_ESCAPE_FILTER) . ",$user_dn)";
-   $ldap_search = @ ldap_search($ldap_connection, $user_dn, $ldap_search_query);
-   $result = @ ldap_get_entries($ldap_connection, $ldap_search);
+    $account_identifier = $account_r[$LDAP['account_attribute']][0];
+    $user_dn=$LDAP['user_dn'];
+    $ldap_search_query = "(${LDAP['account_attribute']}=" . ldap_escape($account_identifier, "", LDAP_ESCAPE_FILTER) . ",$user_dn)";
+    $ldap_search = @ ldap_search($ldap_connection, $user_dn, $ldap_search_query);
+    $result = @ ldap_get_entries($ldap_connection, $ldap_search);
 
-   if ($result['count'] == 0) {
+    if ($result['count'] == 0) {
 
-     $hashed_pass = ldap_hashed_password($account_r['password'][0]);
-     unset($account_r['password']);
+      $hashed_pass = ldap_hashed_password($account_r['password'][0]);
 
-     $objectclasses = $LDAP['account_objectclasses'];
+      if ($SET_SAMBA_ATTRIBUTES) {
+        $sambaNTPassword = samba_hash($account_r['password'][0]);
+        $sambaPwdLastSet = time();
+      }
 
-     $account_attributes = array('objectclass' => $objectclasses,
-                                 'userpassword' => $hashed_pass,
-                       );
+      unset($account_r['password']);
 
-     $account_attributes = array_merge($account_r, $account_attributes);
+      $objectclasses = $LDAP['account_objectclasses'];
 
-     if (!isset($account_attributes['uidnumber']) or !is_numeric($account_attributes['uidnumber'])) {
-       $highest_uid = ldap_get_highest_id($ldap_connection,'uid');
-       $account_attributes['uidnumber'] = $highest_uid + 1;
-     }
+      $account_attributes = array('objectclass' => $objectclasses,
+                                  'userpassword' => $hashed_pass,
+                        );
 
-     if (!isset($account_attributes['gidnumber']) or !is_numeric($account_attributes['gidnumber'])) {
-       $default_gid = ldap_get_gid_of_group($ldap_connection,$DEFAULT_USER_GROUP);
-       if (!is_numeric($default_gid)) {
-         $group_add = ldap_new_group($ldap_connection,$account_identifier,$account_identifier);
-         $account_attributes['gidnumber'] = ldap_get_gid_of_group($ldap_connection,$account_identifier);
-       }
-       else {
+      if ($SET_SAMBA_ATTRIBUTES) {
+        $account_attributes['sambaNTPassword'] = $sambaNTPassword;
+        $account_attributes['sambaPwdLastSet'] = $sambaPwdLastSet;
+      }
+
+      $account_attributes = array_merge($account_r, $account_attributes);
+
+      if (!isset($account_attributes['uidnumber']) or !is_numeric($account_attributes['uidnumber'])) {
+        $highest_uid = ldap_get_highest_id($ldap_connection,'uid');
+        $account_attributes['uidnumber'] = $highest_uid + 1;
+      }
+
+      if ($SET_SAMBA_ATTRIBUTES) {
+        $sid = samba_get_domain_sid($ldap_connection);
+        $account_attributes['sambaSID'] = $sid.'-'.$account_attributes['uidnumber'];
+      }
+
+      if (!isset($account_attributes['gidnumber']) or !is_numeric($account_attributes['gidnumber'])) {
+        $default_gid = ldap_get_gid_of_group($ldap_connection,$DEFAULT_USER_GROUP);
+        if (!is_numeric($default_gid)) {
+          $group_add = ldap_new_group($ldap_connection,$account_identifier,$account_identifier);
+          $account_attributes['gidnumber'] = ldap_get_gid_of_group($ldap_connection,$account_identifier);
+        }
+        else {
         $account_attributes['gidnumber'] = $default_gid;
         $add_to_group = $DEFAULT_USER_GROUP;
-       }
-     }
+        }
+      }
 
-     if (empty($account_attributes['loginshell']))    { $account_attributes['loginshell']    = $DEFAULT_USER_SHELL; }
-     if (empty($account_attributes['homedirectory'])) { $account_attributes['homedirectory'] = "/home/" . $account_r['uid'][0]; }
+      if (empty($account_attributes['loginshell']))    { $account_attributes['loginshell']    = $DEFAULT_USER_SHELL; }
+      if (empty($account_attributes['homedirectory'])) { $account_attributes['homedirectory'] = "/home/" . $account_r['uid'][0]; }
 
-     $add_account = @ ldap_add($ldap_connection,
-                               "${LDAP['account_attribute']}=$account_identifier,${LDAP['user_dn']}",
-                               $account_attributes
+      $add_account = @ ldap_add($ldap_connection,
+                                "${LDAP['account_attribute']}=$account_identifier,${LDAP['user_dn']}",
+                                $account_attributes
                               );
 
-     if ($add_account) {
-       error_log("$log_prefix Created new account: $account_identifier",0);
-       ldap_add_member_to_group($ldap_connection,$add_to_group,$account_identifier);
+      if ($add_account) {
+        error_log("$log_prefix Created new account: $account_identifier",0);
+        ldap_add_member_to_group($ldap_connection,$add_to_group,$account_identifier);
 
-       $this_uid = fetch_id_stored_in_ldap($ldap_connection,"uid");
-       $new_uid = $account_attributes['uidnumber'];
+        $this_uid = fetch_id_stored_in_ldap($ldap_connection,"uid");
+        $new_uid = $account_attributes['uidnumber'];
 
-       if ($this_uid != FALSE) {
-         $update_uid = @ ldap_mod_replace($ldap_connection, "cn=lastUID,${LDAP['base_dn']}", array( 'serialNumber' => $new_uid ));
-         if ($update_uid) {
-           error_log("$log_prefix Create account; Updated cn=lastUID with $new_uid",0);
-         }
-         else {
-           error_log("$log_prefix Unable to update cn=lastUID to $new_uid - this could cause user accounts to share the same UID.",0);
-         }
-       }
-       return TRUE;
-     }
-     else {
-       ldap_get_option($ldap_connection, LDAP_OPT_DIAGNOSTIC_MESSAGE, $detailed_err);
-       error_log("$log_prefix Create account; couldn't create the account for ${account_identifier}: " . ldap_error($ldap_connection) . " -- " . $detailed_err,0);
-     }
+        if ($this_uid != FALSE) {
+          $update_uid = @ ldap_mod_replace($ldap_connection, "cn=lastUID,${LDAP['base_dn']}", array( 'serialNumber' => $new_uid ));
+          if ($update_uid) {
+            error_log("$log_prefix Create account; Updated cn=lastUID with $new_uid",0);
+          }
+          else {
+            error_log("$log_prefix Unable to update cn=lastUID to $new_uid - this could cause user accounts to share the same UID.",0);
+          }
+        }
+        return TRUE;
+      }
+      else {
+        ldap_get_option($ldap_connection, LDAP_OPT_DIAGNOSTIC_MESSAGE, $detailed_err);
+        error_log("$log_prefix Create account; couldn't create the account for ${account_identifier}: " . ldap_error($ldap_connection) . " -- " . $detailed_err,0);
+      }
 
-   }
+    }
 
-   else {
-     error_log("$log_prefix Create account; Account for ${account_identifier} already exists",0);
-   }
+    else {
+      error_log("$log_prefix Create account; Account for ${account_identifier} already exists",0);
+    }
 
   }
   else {
@@ -969,38 +985,42 @@ function ldap_delete_member_from_group($ldap_connection,$group_name,$username) {
 
 function ldap_change_password($ldap_connection,$username,$new_password) {
 
- global $log_prefix, $LDAP, $LDAP_DEBUG;
+  global $log_prefix, $LDAP, $LDAP_DEBUG, $SET_SAMBA_ATTRIBUTES;
 
- #Find DN of user
+  #Find DN of user
 
- $ldap_search_query = "${LDAP['account_attribute']}=" . ldap_escape($username, "", LDAP_ESCAPE_FILTER);
- $ldap_search = @ ldap_search( $ldap_connection, $LDAP['user_dn'], $ldap_search_query);
- if ($ldap_search) {
-  $result = @ ldap_get_entries($ldap_connection, $ldap_search);
-  if ($result["count"] == 1) {
-  $this_dn=$result[0]['dn'];
+  $ldap_search_query = "${LDAP['account_attribute']}=" . ldap_escape($username, "", LDAP_ESCAPE_FILTER);
+  $ldap_search = @ldap_search($ldap_connection, $LDAP['user_dn'], $ldap_search_query);
+  if ($ldap_search) {
+    $result = @ldap_get_entries($ldap_connection, $ldap_search);
+    if ($result["count"] == 1) {
+      $this_dn = $result[0]['dn'];
+    }
+    else {
+      error_log("$log_prefix Couldn't find the DN for user $username");
+      return FALSE;
+    }
   }
   else {
-   error_log("$log_prefix Couldn't find the DN for user $username");
-   return FALSE;
+    error_log("$log_prefix Couldn't perform an LDAP search for ${LDAP['account_attribute']}=${username}: " . ldap_error($ldap_connection), 0);
+    return FALSE;
   }
- }
- else {
-  error_log("$log_prefix Couldn't perform an LDAP search for ${LDAP['account_attribute']}=${username}: " . ldap_error($ldap_connection),0);
-  return FALSE;
- }
 
- $entries["userPassword"] = ldap_hashed_password($new_password);
- $update = @ ldap_mod_replace($ldap_connection, $this_dn, $entries);
+  $entries["userPassword"] = ldap_hashed_password($new_password);
+  if ($SET_SAMBA_ATTRIBUTES) {
+    $entries["sambaNTPassword"] = samba_hash($new_password);
+    $entries["sambaPwdLastSet"] = time();
+  }
+  $update = @ldap_mod_replace($ldap_connection, $this_dn, $entries);
 
- if ($update) {
-  error_log("$log_prefix Updated the password for $username",0);
-  return TRUE;
- }
- else {
-  error_log("$log_prefix Couldn't update the password for ${username}: " . ldap_error($ldap_connection),0);
-  return TRUE;
- }
+  if ($update) {
+    error_log("$log_prefix Updated the password for $username", 0);
+    return TRUE;
+  }
+  else {
+    error_log("$log_prefix Couldn't update the password for ${username}: " . ldap_error($ldap_connection), 0);
+    return TRUE;
+  }
 
 }
 
