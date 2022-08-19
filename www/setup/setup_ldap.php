@@ -134,7 +134,7 @@ if (isset($_POST['fix_problems'])) {
 
  $admins = ldap_get_group_members($ldap_connection,$LDAP['admins_group']);
 
- if (count($admins) < 1) {
+ if (count($admins) < 2) {
 
   ?>
   <div class="form-group">
