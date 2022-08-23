@@ -43,7 +43,7 @@ $people = ldap_get_user_list($ldap_connection);
      <th>Account name</th>
      <th>First name</th>
      <th>Last name</th>
-     <th>Email</th>
+     <th>Title</th>
      <th>Member of</th>
    </tr>
   </thead>
@@ -62,11 +62,13 @@ $people = ldap_get_user_list($ldap_connection);
 foreach ($people as $account_identifier => $attribs){
 
  $group_membership = ldap_user_group_membership($ldap_connection,$account_identifier);
- if (isset($people[$account_identifier]['mail'])) { $this_mail = $people[$account_identifier]['mail']; } else { $this_mail = ""; }
+ if (isset($people[$account_identifier]['title'])) { $this_title = $people[$account_identifier]['title']; } else { $this_title = ""; }
+ if (isset($people[$account_identifier]['givenname'])) { $this_givenname = $people[$account_identifier]['givenname']; } else { $this_givenname = ""; }
+ if (isset($people[$account_identifier]['sn'])) { $this_sn = $people[$account_identifier]['sn']; } else { $this_sn = ""; }
 
  print " <tr>\n   <td><a href='${THIS_MODULE_PATH}/show_user.php?account_identifier=" . urlencode($account_identifier) . "'>$account_identifier</a></td>\n";
- print "   <td>" . $people[$account_identifier]['givenname'] . "</td>\n";
- print "   <td>" . $people[$account_identifier]['sn'] . "</td>\n";
+ print "   <td>$this_givenname</td>\n";
+ print "   <td>$this_sn</td>\n";
  print "   <td>$this_mail</td>\n";
  print "   <td>" . implode(", ", $group_membership) . "</td>\n";
  print " </tr>\n";
