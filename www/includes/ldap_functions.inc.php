@@ -1,5 +1,9 @@
 <?php
 
+set_include_path( ".:" . __DIR__ . "/../includes/");
+
+include_once "samba_functions.inc.php";
+
 ###################################
 
 function open_ldap_connection($ldap_bind=TRUE) {
