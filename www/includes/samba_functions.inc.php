@@ -11,12 +11,12 @@ function samba_get_domain_sid($ldap_connection) {
 
   global $log_prefix, $LDAP;
   
-  $filter = "(&(objectclass=sambaDomain))";
+  $filter = "objectclass=sambaDomain";
   $ldap_search = @ ldap_search($ldap_connection, "${LDAP['base_dn']}", $filter, array('sambaSID'));
   $result = ldap_get_entries($ldap_connection, $ldap_search);
 
-  if (isset($result[0]['sambaSID'][0])) {
-    return $result[0]['sambaSID'][0];
+  if (isset($result[0]['sambasid'][0])) {
+    return $result[0]['sambasid'][0];
   }
   else {
     error_log("$log_prefix samba domain not found.",0);

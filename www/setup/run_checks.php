@@ -227,7 +227,7 @@ else {
 
  $admins = ldap_get_group_members($ldap_connection,$LDAP['admins_group']);
 
- if (count($admins) < 1) {
+ if (count($admins) < 2) {
   print "$li_fail The LDAP administration group is empty. You can add an admin account in the next section.</li>";
   $show_finish_button = FALSE;
  }
