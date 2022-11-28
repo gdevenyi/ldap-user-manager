@@ -23,12 +23,33 @@
  $LDAP['account_attribute'] = (getenv('LDAP_ACCOUNT_ATTRIBUTE') ? getenv('LDAP_ACCOUNT_ATTRIBUTE') : 'uid');
  $LDAP['account_objectclasses'] = array( 'person', 'inetOrgPerson', 'posixAccount' );
  if ($SET_SAMBA_ATTRIBUTES) { $LDAP['account_objectclasses'][] = 'sambaSamAccount'; }
- $LDAP['default_attribute_map'] = array( "givenname" => array("label" => "First name",      "onkeyup" => "update_username(); update_email(); update_cn(); update_homedir(); check_email_validity(document.getElementById('mail').value);"),
-                                         "sn"        => array("label" => "Last name",       "onkeyup" => "update_username(); update_email(); update_cn(); update_homedir(); check_email_validity(document.getElementById('mail').value);"),
-                                         "uid"       => array("label" => "System username", "onkeyup" => "check_entity_name_validity(document.getElementById('uid').value,'uid_div'); update_email(); update_homedir(); check_email_validity(document.getElementById('mail').value);"),
-                                         "cn"        => array("label" => "Common name",     "onkeyup" => "auto_cn_update = false;"),
-                                         "mail"      => array("label" => "Email",           "onkeyup" => "auto_email_update = false; check_email_validity(document.getElementById('mail').value);")
-                                        );
+ $LDAP['default_attribute_map'] = array( 
+  "givenname" => array(
+    "label" => "First name",
+    "onkeyup" => "update_username(); update_email(); update_cn(); update_homedir(); check_email_validity(document.getElementById('mail').value);",
+    "required" => true
+  ),
+  "sn" => array(
+    "label" => "Last name",
+    "onkeyup" => "update_username(); update_email(); update_cn(); update_homedir(); check_email_validity(document.getElementById('mail').value);",
+    "required" => true
+  ),
+  "uid" => array(
+    "label" => "System username",
+    "onkeyup" => "check_entity_name_validity(document.getElementById('uid').value,'uid_div'); update_email(); update_homedir(); check_email_validity(document.getElementById('mail').value);",
+    "required" => true
+  ),
+  "cn" => array(
+    "label" => "Common name",
+    "onkeyup" => "auto_cn_update = false;",
+    "required" => true
+  ),
+  "mail" => array(
+    "label" => "Email",
+    "onkeyup" => "auto_email_update = false; check_email_validity(document.getElementById('mail').value);",
+    "required" => false
+  )
+);
 
  $LDAP['group_attribute'] = (getenv('LDAP_GROUP_ATTRIBUTE') ? getenv('LDAP_GROUP_ATTRIBUTE') : 'cn');
  $LDAP['group_objectclasses'] = array( 'top', 'posixGroup' ); #groupOfUniqueNames is added automatically if rfc2307bis is available.

@@ -69,7 +69,7 @@ foreach ($people as $account_identifier => $attribs){
  print " <tr>\n   <td><a href='${THIS_MODULE_PATH}/show_user.php?account_identifier=" . urlencode($account_identifier) . "'>$account_identifier</a></td>\n";
  print "   <td>$this_givenname</td>\n";
  print "   <td>$this_sn</td>\n";
- print "   <td>$this_mail</td>\n";
+ print "   <td>$this_title</td>\n";
  print "   <td>" . implode(", ", $group_membership) . "</td>\n";
  print " </tr>\n";
 }

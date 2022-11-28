@@ -307,7 +307,7 @@ function ldap_get_user_list($ldap_connection,$start=0,$entries=NULL,$sort="asc",
 
  global $log_prefix, $LDAP, $LDAP_DEBUG;
 
- if (!isset($fields)) { $fields = array_unique( array("${LDAP['account_attribute']}", "givenname", "sn", "mail")); }
+ if (!isset($fields)) { $fields = array_unique( array("${LDAP['account_attribute']}", "givenname", "sn", "title")); }
 
  if (!isset($sort_key)) { $sort_key = $LDAP['account_attribute']; }
 

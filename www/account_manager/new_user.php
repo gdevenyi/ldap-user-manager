@@ -153,7 +153,9 @@ if (isset($_POST['create_account'])) {
  $new_account_r['password'][0] = $password;
  $account_identifier = $new_account_r[$account_attribute][0];
  $this_cn=$cn[0];
- $this_mail=$mail[0];
+ if (isset($mail)) {
+  $this_mail=$mail[0];
+ }
  $this_givenname=$givenname[0];
  $this_sn=$sn[0];
  $this_password=$password[0];
@@ -357,10 +359,16 @@ $tabindex=1;
        foreach ($attribute_map as $attribute => $attr_r) {
          $label = $attr_r['label'];
          if (isset($attr_r['onkeyup'])) { $onkeyup = $attr_r['onkeyup']; } else { $onkeyup = ""; }
-         if ($attribute == $LDAP['account_attribute']) { $label = "<strong>$label</strong><sup>&ast;</sup>"; }
+         
+         $required = false;
+         if (isset($attr_r['required']) && $attr_r['required']) {
+          $label = "<strong>$label</strong><sup>&ast;</sup>";
+          $required = true;
+         }
+         
          if (isset($$attribute)) { $these_values=$$attribute; } else { $these_values = array(); }
          if (isset($attr_r['inputtype'])) { $inputtype = $attr_r['inputtype']; } else { $inputtype = ""; }
-         render_attribute_fields($attribute,$label,$these_values,"",$onkeyup,$inputtype,$tabindex);
+         render_attribute_fields($attribute,$label,$these_values,"",$onkeyup,$inputtype,$tabindex,$required);
          $tabindex++;
        }
      ?>
@@ -401,7 +409,7 @@ $tabindex=1;
      <div id="StrengthProgressBar" class="progress-bar"></div>
     </div>
 
-    <div><sup>&ast;</sup>The account identifier</div>
+    <div><sup>&ast;</sup>Required fields</div>
 
    </div>
   </div>
