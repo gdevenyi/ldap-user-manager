@@ -478,6 +478,31 @@ function render_js_username_generator($firstname_field_id,$lastname_field_id,$us
   print <<<EoRenderJS
 
 <script>
+ function translit(word){
+
+	var answer = '';
+
+	var converter = {
+		'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd',
+		'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z', 'и': 'i',
+		'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n',
+		'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't',
+		'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'ts', 'ч': 'ch',
+		'ш': 'sh', 'щ': 'sch', 'ь': '', 'ы': 'y', 'ъ': '',
+		'э': 'e', 'ю': 'yu', 'я': 'ya',
+	};
+
+	for (var i = 0; i < word.length; ++i ) {
+		if (converter[word[i]] === undefined){
+			answer += word[i];
+		} else {
+			answer += converter[word[i]];
+		}
+	}
+
+	return answer;
+ }
+
  function update_username() {
 
   var first_name = document.getElementById('$firstname_field_id').value;
@@ -486,10 +511,10 @@ function render_js_username_generator($firstname_field_id,$lastname_field_id,$us
 
   var actual_username = template;
 
-  actual_username = actual_username.replace('{first_name}', first_name.toLowerCase()$remove_accents );
-  actual_username = actual_username.replace('{first_name_initial}', first_name.charAt(0).toLowerCase()$remove_accents );
-  actual_username = actual_username.replace('{last_name}', last_name.toLowerCase()$remove_accents );
-  actual_username = actual_username.replace('{last_name_initial}', last_name.charAt(0).toLowerCase()$remove_accents );
+  actual_username = actual_username.replace('{first_name}', translit(first_name.toLowerCase())$remove_accents );
+  actual_username = actual_username.replace('{first_name_initial}', translit(first_name.toLowerCase()).charAt(0)$remove_accents );
+  actual_username = actual_username.replace('{last_name}', translit(last_name.toLowerCase())$remove_accents );
+  actual_username = actual_username.replace('{last_name_initial}', translit(last_name.toLowerCase()).charAt(0)$remove_accents );
 
   check_entity_name_validity(actual_username,'$username_div_id');
 
