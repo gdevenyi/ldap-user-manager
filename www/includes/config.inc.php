@@ -81,6 +81,16 @@
  $LDAP['ignore_cert_errors'] = ((strcasecmp(getenv('LDAP_IGNORE_CERT_ERRORS'),'TRUE') == 0) ? TRUE : FALSE);
  $LDAP['rfc2307bis_check_run'] = FALSE;
 
+ # try load password from file
+ if (empty($LDAP['admin_bind_pwd'])) {
+   $fname = getenv('LDAP_ADMIN_BIND_PWD_FILE');
+   if(!empty($fname))
+     $pwd = file_get_contents($fname);
+     //remove trailing line feed - if any
+     if($pwd[-1] == "\n")
+       $pwd = substr($pwd, 0, -1);
+     $LDAP['admin_bind_pwd'] = $pwd;
+ }
 
  # Various advanced LDAP settings
 
