@@ -5,6 +5,7 @@ set_include_path( ".:" . __DIR__ . "/../includes/");
 include_once "web_functions.inc.php";
 include_once "ldap_functions.inc.php";
 include_once "module_functions.inc.php";
+include_once "samba_functions.inc.php";
 set_page_access("admin");
 
 render_header("$ORGANISATION_NAME account manager");
@@ -150,6 +151,11 @@ if ($ldap_search) {
        and !$invalid_password
                              ) {
      $to_update['userpassword'][0] = ldap_hashed_password($password);
+
+     if ($SET_SAMBA_ATTRIBUTES) {
+      $to_update['sambaNTPassword'] = samba_hash($password);
+      $to_update['sambaPwdLastSet'] = time();
+     }
     }
   }
 
