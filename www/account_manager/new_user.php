@@ -136,7 +136,7 @@ if (isset($_GET['account_request']) or isset($_POST['create_account'])) {
   }
 
   if (!isset($cn[0])) {
-    if ($ENFORCE_SAFE_SYSTEM_NAMES == TRUE) {
+    if ($ENFORCE_SAFE_SYSTEM_NAMES == TRUE && $LDAP_ACCOUNT_ATTRIBUTE == "cn") {
       $cn[0] = $givenname[0] . $sn[0];
     }
     else {
