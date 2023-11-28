@@ -103,13 +103,13 @@ foreach ($attribute_map as $attribute => $attr_r) {
 
     if (is_array($_POST[$attribute])) {
       foreach($_POST[$attribute] as $key => $value) {
-        if ($value != "") { $this_attribute[$key] = filter_var($value, FILTER_SANITIZE_FULL_SPECIAL_CHARS); }
+        if ($value != "") { $this_attribute[$key] = filter_var($value, FILTER_SANITIZE_SPECIAL_CHARS); }
       }
       $this_attribute['count'] = count($this_attribute);
     }
     elseif ($_POST[$attribute] != "") {
       $this_attribute['count'] = 1;
-      $this_attribute[0] = filter_var($_POST[$attribute], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+      $this_attribute[0] = filter_var($_POST[$attribute], FILTER_SANITIZE_SPECIAL_CHARS);
     }
 
     if ($this_attribute != $$attribute) {
@@ -149,7 +149,7 @@ if (isset($_POST["update_members"])) {
 
   foreach ($_POST['membership'] as $index => $member) {
     if (is_numeric($index)) {
-     array_push($updated_membership,filter_var($member, FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+     array_push($updated_membership,filter_var($member, FILTER_SANITIZE_SPECIAL_CHARS));
     }
   }
 
