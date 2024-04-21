@@ -81,6 +81,17 @@
  $LDAP['ignore_cert_errors'] = ((strcasecmp(getenv('LDAP_IGNORE_CERT_ERRORS'),'TRUE') == 0) ? TRUE : FALSE);
  $LDAP['rfc2307bis_check_run'] = FALSE;
 
+ # try load password from file
+ if (empty($LDAP['admin_bind_pwd'])) {
+   $fname = getenv('LDAP_ADMIN_BIND_PWD_FILE');
+   if(!empty($fname)) {
+     $pwd = file_get_contents($fname);
+     //remove trailing line feed - if any
+     if($pwd[-1] == "\n")
+       $pwd = substr($pwd, 0, -1);
+     $LDAP['admin_bind_pwd'] = $pwd;
+   }
+ }
 
  # Various advanced LDAP settings
 
@@ -137,6 +148,18 @@
  $SMTP['ssl']  = ((strcasecmp(getenv('SMTP_USE_SSL'),'TRUE') == 0) ? TRUE : FALSE);
  $SMTP['tls']  = ((strcasecmp(getenv('SMTP_USE_TLS'),'TRUE') == 0) ? TRUE : FALSE);
  if ($SMTP['tls'] == TRUE) { $SMTP['ssl'] = FALSE; }
+
+ # try load password from file
+ if (empty($SMTP['pass'])) {
+  $fname = getenv('SMTP_PASSWORD_FILE');
+  if(!empty($fname)) {
+    $pwd = file_get_contents($fname);
+    //remove trailing line feed - if any
+    if($pwd[-1] == "\n")
+      $pwd = substr($pwd, 0, -1);
+    $SMTP['pass'] = $pwd;
+  }
+}
 
  $EMAIL_DOMAIN = (getenv('EMAIL_DOMAIN') ? getenv('EMAIL_DOMAIN') : Null);
 

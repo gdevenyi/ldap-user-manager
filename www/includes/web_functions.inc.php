@@ -509,8 +509,9 @@ EoRenderJS;
 function render_js_cn_generator($firstname_field_id,$lastname_field_id,$cn_field_id,$cn_div_id) {
 
   global $ENFORCE_SAFE_SYSTEM_NAMES;
+  global $LDAP_ACCOUNT_ATTRIBUTE;
 
-  if ($ENFORCE_SAFE_SYSTEM_NAMES == TRUE) {
+  if ($ENFORCE_SAFE_SYSTEM_NAMES == TRUE && $LDAP_ACCOUNT_ATTRIBUTE == "cn") {
     $gen_js = "first_name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') + last_name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')";
   }
   else {
